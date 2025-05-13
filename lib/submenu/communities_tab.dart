@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'models.dart';
+import 'community_detail_page.dart';
 
 class CommunitiesTab extends StatefulWidget {
-  const CommunitiesTab({Key? key}) : super(key: key);
+  const CommunitiesTab({super.key});
 
   @override
   State<CommunitiesTab> createState() => _CommunitiesTabState();
@@ -18,6 +19,8 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
       members: 18,
       sport: 'Basket',
       nextEvent: 'Besok, 16:00',
+      description:
+          'Komunitas basket yang rutin bermain di Senayan setiap minggu.',
     ),
     Community(
       id: '2',
@@ -26,6 +29,7 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
       members: 14,
       sport: 'Futsal',
       nextEvent: 'Sabtu, 19:00',
+      description: 'Komunitas futsal yang aktif bermain di daerah Kemang.',
     ),
     Community(
       id: '3',
@@ -34,6 +38,8 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
       members: 12,
       sport: 'Badminton',
       nextEvent: 'Minggu, 08:00',
+      description:
+          'Komunitas badminton untuk para pecinta olahraga di akhir pekan.',
     ),
     Community(
       id: '4',
@@ -42,8 +48,31 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
       members: 26,
       sport: 'Lari',
       nextEvent: 'Setiap Sabtu, 06:00',
+      description:
+          'Komunitas lari pagi yang rutin berolahraga setiap Sabtu pagi.',
     ),
   ];
+
+  String _searchQuery = '';
+  String _selectedCategory = 'Semua';
+  final List<String> _filters = [
+    'Semua',
+    'Basket',
+    'Futsal',
+    'Badminton',
+    'Lari',
+  ];
+
+  List<Community> get _filteredCommunities {
+    return _communities.where((community) {
+      final matchesSearch = community.name.toLowerCase().contains(
+        _searchQuery.toLowerCase(),
+      );
+      final matchesCategory =
+          _selectedCategory == 'Semua' || community.sport == _selectedCategory;
+      return matchesSearch && matchesCategory;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +83,11 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
         children: [
           // Search Bar
           TextField(
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
             decoration: InputDecoration(
               hintText: 'Cari komunitas',
               prefixIcon: const Icon(Icons.search),
@@ -64,6 +98,53 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Filter Categories
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children:
+                  _filters.map((filter) {
+                    final isSelected = _selectedCategory == filter;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: FilterChip(
+                        label: Text(filter),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            _selectedCategory = filter;
+                          });
+                        },
+                        backgroundColor: Colors.grey.shade200,
+                        selectedColor: Colors.red.shade100,
+                        checkmarkColor: Colors.red,
+                        labelStyle: TextStyle(
+                          color:
+                              isSelected ? Colors.red.shade700 : Colors.black87,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color:
+                                isSelected
+                                    ? Colors.red.shade300
+                                    : Colors.transparent,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                    );
+                  }).toList(),
             ),
           ),
 
@@ -80,9 +161,9 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: _communities.length,
+            itemCount: _filteredCommunities.length,
             itemBuilder: (context, index) {
-              final community = _communities[index];
+              final community = _filteredCommunities[index];
               return _buildCommunityCard(community);
             },
           ),
@@ -177,7 +258,14 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          // View Community
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      CommunityDetailPage(community: community),
+                            ),
+                          );
                         },
                         style: OutlinedButton.styleFrom(
                           shape: RoundedRectangleBorder(

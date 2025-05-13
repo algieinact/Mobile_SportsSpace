@@ -8,10 +8,11 @@ class Post {
   final String sport;
   final String location;
   final String time;
-  final int likes;
+  int likes;
   final int comments;
   final String timeAgo;
   final List<String>? images;
+  bool? isLiked;
 
   Post({
     required this.id,
@@ -25,6 +26,7 @@ class Post {
     required this.comments,
     required this.timeAgo,
     this.images,
+    this.isLiked = false,
   });
 }
 
@@ -35,6 +37,7 @@ class Community {
   final int members;
   final String sport;
   final String nextEvent;
+  final String description;
 
   Community({
     required this.id,
@@ -43,6 +46,7 @@ class Community {
     required this.members,
     required this.sport,
     required this.nextEvent,
+    required this.description,
   });
 }
 

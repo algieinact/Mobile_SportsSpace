@@ -5,13 +5,14 @@ import 'RegisterPage.dart';
 import 'dashboard.dart';
 import 'profile.dart';
 import 'faq.dart';
+import 'submenu/community_detail_page.dart';
 
 void main() {
   runApp(const SportsSpaceApp());
 }
 
 class SportsSpaceApp extends StatelessWidget {
-  const SportsSpaceApp({Key? key}) : super(key: key);
+  const SportsSpaceApp({super.key});
 
   @override
   Widget build(BuildContext context) {

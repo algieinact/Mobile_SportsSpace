@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'models.dart';
+import 'groups_detail_page.dart'; // Import halaman detail grup
 
 class GroupsTab extends StatefulWidget {
-  const GroupsTab({Key? key}) : super(key: key);
-  
+  const GroupsTab({super.key});
+
   @override
   State<GroupsTab> createState() => _GroupsTabState();
 }
@@ -46,8 +47,37 @@ class _GroupsTabState extends State<GroupsTab> {
     ),
   ];
 
+  // Tambahkan state untuk kategori yang dipilih
+  String _selectedCategory = 'Semua';
+
+  // Tambahkan state untuk pencarian
+  String _searchQuery = '';
+
+  // Add filters list
+  final List<String> _filters = [
+    'Semua',
+    'Basket',
+    'Futsal',
+    'Badminton',
+    'Lari',
+  ];
+
   @override
   Widget build(BuildContext context) {
+    // Filter daftar grup berdasarkan kategori
+    final filteredGroups =
+        _selectedCategory == 'Semua'
+            ? _sportsGroups
+            : _sportsGroups
+                .where((group) => group.sport == _selectedCategory)
+                .toList();
+
+    // Filter grup berdasarkan pencarian
+    final searchedGroups =
+        filteredGroups.where((group) {
+          return group.name.toLowerCase().contains(_searchQuery);
+        }).toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -55,6 +85,11 @@ class _GroupsTabState extends State<GroupsTab> {
         children: [
           // Search Bar
           TextField(
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value.toLowerCase();
+              });
+            },
             decoration: InputDecoration(
               hintText: 'Cari grup olahraga',
               prefixIcon: const Icon(Icons.search),
@@ -74,33 +109,44 @@ class _GroupsTabState extends State<GroupsTab> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: [
-                _buildCategoryPill(
-                  label: 'Semua',
-                  isSelected: true,
-                  onTap: () {},
-                ),
-                _buildCategoryPill(
-                  label: 'Basket',
-                  isSelected: false,
-                  onTap: () {},
-                ),
-                _buildCategoryPill(
-                  label: 'Futsal',
-                  isSelected: false,
-                  onTap: () {},
-                ),
-                _buildCategoryPill(
-                  label: 'Badminton',
-                  isSelected: false,
-                  onTap: () {},
-                ),
-                _buildCategoryPill(
-                  label: 'Lari',
-                  isSelected: false,
-                  onTap: () {},
-                ),
-              ],
+              children:
+                  _filters.map((filter) {
+                    final isSelected = _selectedCategory == filter;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: FilterChip(
+                        label: Text(filter),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            _selectedCategory = filter;
+                          });
+                        },
+                        backgroundColor: Colors.grey.shade200,
+                        selectedColor: Colors.red.shade100,
+                        checkmarkColor: Colors.red,
+                        labelStyle: TextStyle(
+                          color:
+                              isSelected ? Colors.red.shade700 : Colors.black87,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color:
+                                isSelected
+                                    ? Colors.red.shade300
+                                    : Colors.transparent,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                    );
+                  }).toList(),
             ),
           ),
 
@@ -128,10 +174,10 @@ class _GroupsTabState extends State<GroupsTab> {
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: _sportsGroups.length,
+            itemCount: searchedGroups.length,
             itemBuilder: (context, index) {
-              final group = _sportsGroups[index];
-              return _buildGroupCard(group);
+              final group = searchedGroups[index];
+              return _buildGroupCard(context, group);
             },
           ),
         ],
@@ -139,32 +185,7 @@ class _GroupsTabState extends State<GroupsTab> {
     );
   }
 
-  Widget _buildCategoryPill({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.red : Colors.grey[100],
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[700],
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGroupCard(SportsGroup group) {
+  Widget _buildGroupCard(BuildContext context, SportsGroup group) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -250,18 +271,47 @@ class _GroupsTabState extends State<GroupsTab> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Join group
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      minimumSize: const Size(double.infinity, 36),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  // Row with two buttons: Gabung and Details
+                  Row(
+                    children: [
+                      // Gabung Button
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // Join group
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            minimumSize: const Size(double.infinity, 36),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Gabung'),
+                        ),
                       ),
-                    ),
-                    child: const Text('Gabung'),
+                      const SizedBox(width: 8),
+                      // Details Button
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => GroupsDetailPage(group: group),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Detail'),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

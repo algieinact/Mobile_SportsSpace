@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'models.dart';
+import 'fields_detail_page.dart';
 
 class FieldsTab extends StatefulWidget {
-  const FieldsTab({Key? key}) : super(key: key);
+  const FieldsTab({super.key});
 
   @override
   State<FieldsTab> createState() => _FieldsTabState();
@@ -25,7 +26,8 @@ class _FieldsTabState extends State<FieldsTab> {
     Field(
       id: '2',
       name: 'Futsal Zone Kemang',
-      image: 'https://images.unsplash.com/photo-1624880357913-a8539782bf56',
+      image:
+          'https://images.unsplash.com/photo-1712325485668-6b6830ba814e?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       rating: 4.5,
       reviews: 89,
       location: 'Kemang, Jakarta Selatan',
@@ -57,6 +59,31 @@ class _FieldsTabState extends State<FieldsTab> {
     ),
   ];
 
+  String _searchQuery = '';
+  String _selectedCategory = 'Semua';
+
+  // Add filters list
+  final List<String> _filters = [
+    'Semua',
+    'Basket',
+    'Futsal',
+    'Badminton',
+    'Sepak Bola',
+    'Voli',
+  ];
+
+  List<Field> get _filteredFields {
+    return _fields.where((field) {
+      final matchesSearch = field.name.toLowerCase().contains(
+        _searchQuery.toLowerCase(),
+      );
+      final matchesCategory =
+          _selectedCategory == 'Semua' ||
+          field.sports.contains(_selectedCategory);
+      return matchesSearch && matchesCategory;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -66,6 +93,11 @@ class _FieldsTabState extends State<FieldsTab> {
         children: [
           // Search Bar
           TextField(
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
             decoration: InputDecoration(
               hintText: 'Cari venue olahraga',
               prefixIcon: const Icon(Icons.search),
@@ -85,38 +117,44 @@ class _FieldsTabState extends State<FieldsTab> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: [
-                _buildCategoryPill(
-                  label: 'Semua',
-                  isSelected: true,
-                  onTap: () {},
-                ),
-                _buildCategoryPill(
-                  label: 'Basket',
-                  isSelected: false,
-                  onTap: () {},
-                ),
-                _buildCategoryPill(
-                  label: 'Futsal',
-                  isSelected: false,
-                  onTap: () {},
-                ),
-                _buildCategoryPill(
-                  label: 'Badminton',
-                  isSelected: false,
-                  onTap: () {},
-                ),
-                _buildCategoryPill(
-                  label: 'Sepak Bola',
-                  isSelected: false,
-                  onTap: () {},
-                ),
-                _buildCategoryPill(
-                  label: 'Voli',
-                  isSelected: false,
-                  onTap: () {},
-                ),
-              ],
+              children:
+                  _filters.map((filter) {
+                    final isSelected = _selectedCategory == filter;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: FilterChip(
+                        label: Text(filter),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            _selectedCategory = filter;
+                          });
+                        },
+                        backgroundColor: Colors.grey.shade200,
+                        selectedColor: Colors.red.shade100,
+                        checkmarkColor: Colors.red,
+                        labelStyle: TextStyle(
+                          color:
+                              isSelected ? Colors.red.shade700 : Colors.black87,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color:
+                                isSelected
+                                    ? Colors.red.shade300
+                                    : Colors.transparent,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                    );
+                  }).toList(),
             ),
           ),
 
@@ -144,38 +182,13 @@ class _FieldsTabState extends State<FieldsTab> {
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: _fields.length,
+            itemCount: _filteredFields.length,
             itemBuilder: (context, index) {
-              final field = _fields[index];
+              final field = _filteredFields[index];
               return _buildFieldCard(field);
             },
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryPill({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.red : Colors.grey[100],
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[700],
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
       ),
     );
   }
@@ -292,7 +305,13 @@ class _FieldsTabState extends State<FieldsTab> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          // View details
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => FieldsDetailPage(field: field),
+                            ),
+                          );
                         },
                         style: OutlinedButton.styleFrom(
                           shape: RoundedRectangleBorder(

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'models.dart';
 
 class FeedsTab extends StatefulWidget {
-  const FeedsTab({Key? key}) : super(key: key);
+  const FeedsTab({super.key});
 
   @override
   State<FeedsTab> createState() => _FeedsTabState();
@@ -120,11 +120,31 @@ class _FeedsTabState extends State<FeedsTab> {
     );
   }
 
+  String _getGreetingMessage() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Selamat pagi';
+    } else if (hour < 18) {
+      return 'Selamat siang';
+    } else {
+      return 'Selamat malam';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
         children: [
+          // Greeting Message
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Hallo, Algie! ${_getGreetingMessage()}!',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ),
+
           // Create Post Card
           Card(
             margin: const EdgeInsets.all(16),

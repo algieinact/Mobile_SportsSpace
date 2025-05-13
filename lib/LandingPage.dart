@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 class LandingPage extends StatefulWidget {
-  const LandingPage({Key? key}) : super(key: key);
+  const LandingPage({super.key});
 
   @override
   State<LandingPage> createState() => _LandingPageState();
@@ -541,7 +541,11 @@ class _LandingPageState extends State<LandingPage>
                                     radius: 24,
                                     backgroundColor: Colors.grey[200],
                                     backgroundImage: NetworkImage(
-                                      'https://randomuser.me/api/portraits/${index % 2 == 0 ? 'men' : 'women'}/${10 + index}.jpg',
+                                      [
+                                        'https://images.unsplash.com/photo-1499996860823-5214fcc65f8f?q=80&w=1966&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+                                        'https://images.unsplash.com/photo-1517462964-21fdcec3f25b?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+                                        'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?q=80&w=1935&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+                                      ][index],
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -697,20 +701,6 @@ class _LandingPageState extends State<LandingPage>
                     style: TextStyle(color: Colors.grey[700], fontSize: 14),
                   ),
                 ],
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14,
-                  color: Colors.black54,
-                ),
-                onPressed: () {},
               ),
             ),
           ],

@@ -5,7 +5,7 @@ import 'submenu/fields_tab.dart';
 import 'submenu/groups_tab.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({Key? key}) : super(key: key);
+  const DashboardPage({super.key});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
