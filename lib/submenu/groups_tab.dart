@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'models.dart';
-import 'groups_detail_page.dart'; // Import halaman detail grup
+import 'groups_detail_page.dart';
+import '../api_service.dart';
 
 class GroupsTab extends StatefulWidget {
   const GroupsTab({super.key});
@@ -10,50 +11,16 @@ class GroupsTab extends StatefulWidget {
 }
 
 class _GroupsTabState extends State<GroupsTab> {
-  // Dummy data for sports groups
-  final List<SportsGroup> _sportsGroups = [
-    SportsGroup(
-      id: '1',
-      name: 'Jakarta Basketball Community',
-      image: 'https://images.unsplash.com/photo-1608245449230-4ac19066d2d0',
-      members: 452,
-      sport: 'Basket',
-      events: 'Setiap Kamis & Sabtu',
-    ),
-    SportsGroup(
-      id: '2',
-      name: 'Futsal Mania Jakarta',
-      image: 'https://images.unsplash.com/photo-1543351611-58f69d7c1781',
-      members: 328,
-      sport: 'Futsal',
-      events: 'Setiap Jumat & Minggu',
-    ),
-    SportsGroup(
-      id: '3',
-      name: 'Badminton Enthusiasts',
-      image:
-          'https://images.unsplash.com/photo-1599391398131-cd12dfc6c24e?q=80&w=2022&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-      members: 186,
-      sport: 'Badminton',
-      events: 'Setiap Selasa & Minggu',
-    ),
-    SportsGroup(
-      id: '4',
-      name: 'Jakarta Runners',
-      image: 'https://images.unsplash.com/photo-1643116774075-acc00caa9a7b',
-      members: 573,
-      sport: 'Lari',
-      events: 'Setiap Sabtu & Minggu',
-    ),
-  ];
+  final ApiService _apiService = ApiService();
+  List<SportsGroup> _sportsGroups = [];
+  bool _isLoading = true;
+  String _error = '';
 
-  // Tambahkan state untuk kategori yang dipilih
+  // State for category and search
   String _selectedCategory = 'Semua';
-
-  // Tambahkan state untuk pencarian
   String _searchQuery = '';
 
-  // Add filters list
+  // Filters list
   final List<String> _filters = [
     'Semua',
     'Basket',
@@ -63,20 +30,55 @@ class _GroupsTabState extends State<GroupsTab> {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    // Filter daftar grup berdasarkan kategori
-    final filteredGroups =
-        _selectedCategory == 'Semua'
-            ? _sportsGroups
-            : _sportsGroups
-                .where((group) => group.sport == _selectedCategory)
-                .toList();
+  void initState() {
+    super.initState();
+    _fetchGroups();
+  }
 
-    // Filter grup berdasarkan pencarian
-    final searchedGroups =
-        filteredGroups.where((group) {
-          return group.name.toLowerCase().contains(_searchQuery);
-        }).toList();
+  Future<void> _fetchGroups() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = '';
+      });
+
+      final groupsData = await _apiService.fetchGroups();
+      setState(() {
+        _sportsGroups =
+            groupsData.map((data) => SportsGroup.fromJson(data)).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to load groups: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _joinGroup(String groupId) async {
+    try {
+      // Implement join group functionality
+      await _apiService.joinGroup(groupId);
+      // Refresh groups after joining
+      _fetchGroups();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to join group: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Filter groups based on category and search
+    final filteredGroups = _sportsGroups.where((group) {
+      final matchesCategory =
+          _selectedCategory == 'Semua' || group.sport == _selectedCategory;
+      final matchesSearch =
+          group.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    }).toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -87,7 +89,7 @@ class _GroupsTabState extends State<GroupsTab> {
           TextField(
             onChanged: (value) {
               setState(() {
-                _searchQuery = value.toLowerCase();
+                _searchQuery = value;
               });
             },
             decoration: InputDecoration(
@@ -109,77 +111,77 @@ class _GroupsTabState extends State<GroupsTab> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children:
-                  _filters.map((filter) {
-                    final isSelected = _selectedCategory == filter;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: FilterChip(
-                        label: Text(filter),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            _selectedCategory = filter;
-                          });
-                        },
-                        backgroundColor: Colors.grey.shade200,
-                        selectedColor: Colors.red.shade100,
-                        checkmarkColor: Colors.red,
-                        labelStyle: TextStyle(
-                          color:
-                              isSelected ? Colors.red.shade700 : Colors.black87,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(
-                            color:
-                                isSelected
-                                    ? Colors.red.shade300
-                                    : Colors.transparent,
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
+              children: _filters.map((filter) {
+                final isSelected = _selectedCategory == filter;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: FilterChip(
+                    label: Text(filter),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedCategory = filter;
+                      });
+                    },
+                    backgroundColor: Colors.grey.shade200,
+                    selectedColor: Colors.red.shade100,
+                    checkmarkColor: Colors.red,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.red.shade700 : Colors.black87,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: isSelected
+                            ? Colors.red.shade300
+                            : Colors.transparent,
                       ),
-                    );
-                  }).toList(),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           ),
 
           const SizedBox(height: 24),
 
-          // Popular Groups
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Grup Populer',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          // Loading and Error States
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (_error.isNotEmpty)
+            Center(
+              child: Column(
+                children: [
+                  Text(_error, style: const TextStyle(color: Colors.red)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _fetchGroups,
+                    child: const Text('Retry'),
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: () {
-                  // See all groups
-                },
-                child: const Text('Lihat Semua'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Groups List
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: searchedGroups.length,
-            itemBuilder: (context, index) {
-              final group = searchedGroups[index];
-              return _buildGroupCard(context, group);
-            },
-          ),
+            )
+          else if (filteredGroups.isEmpty)
+            const Center(
+              child: Text('No groups found'),
+            )
+          else
+            // Groups List
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: filteredGroups.length,
+              itemBuilder: (context, index) {
+                final group = filteredGroups[index];
+                return _buildGroupCard(context, group);
+              },
+            ),
         ],
       ),
     );
@@ -202,6 +204,14 @@ class _GroupsTabState extends State<GroupsTab> {
               width: 120,
               height: 120,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 120,
+                  height: 120,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.error),
+                );
+              },
             ),
           ),
 
@@ -277,9 +287,7 @@ class _GroupsTabState extends State<GroupsTab> {
                       // Gabung Button
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
-                            // Join group
-                          },
+                          onPressed: () => _joinGroup(group.id),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
                             minimumSize: const Size(double.infinity, 36),
@@ -298,8 +306,8 @@ class _GroupsTabState extends State<GroupsTab> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder:
-                                    (context) => GroupsDetailPage(group: group),
+                                builder: (context) =>
+                                    GroupsDetailPage(group: group),
                               ),
                             );
                           },

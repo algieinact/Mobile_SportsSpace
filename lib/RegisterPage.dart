@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -9,21 +10,73 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _tanggalLahirController = TextEditingController();
+  String _selectedGender = 'Laki laki';
+  final _kotaController = TextEditingController();
+  final _apiService = ApiService();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _agreeToTerms = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _tanggalLahirController.dispose();
+    _kotaController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleRegister() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        final response = await _apiService.register(
+          username: _usernameController.text,
+          email: _emailController.text,
+          password: _passwordController.text,
+          passwordConfirmation: _confirmPasswordController.text,
+          tanggalLahir: _tanggalLahirController.text,
+          gender: _selectedGender,
+          kota: _kotaController.text,
+        );
+
+        // Store token and user data
+        // TODO: Implement secure storage for token and user data
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? 'Registration successful'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pushReplacementNamed(context, '/dashboard');
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    }
   }
 
   @override
@@ -80,18 +133,17 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Name Field
+                    // Username Field
                     TextFormField(
-                      controller: _nameController,
-                      keyboardType: TextInputType.name,
+                      controller: _usernameController,
                       decoration: const InputDecoration(
-                        labelText: 'Nama Lengkap',
-                        hintText: 'Masukkan nama lengkap kamu',
+                        labelText: 'Username',
+                        hintText: 'Masukkan username kamu',
                         prefixIcon: Icon(Icons.person_outline),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Nama tidak boleh kosong';
+                          return 'Username tidak boleh kosong';
                         }
                         return null;
                       },
@@ -184,6 +236,64 @@ class _RegisterPageState extends State<RegisterPage> {
                         return null;
                       },
                     ),
+                    const SizedBox(height: 16),
+
+                    // Tanggal Lahir Field
+                    TextFormField(
+                      controller: _tanggalLahirController,
+                      decoration: const InputDecoration(
+                        labelText: 'Tanggal Lahir',
+                        hintText: 'YYYY-MM-DD',
+                        prefixIcon: Icon(Icons.calendar_today),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Tanggal lahir tidak boleh kosong';
+                        }
+                        // Add date format validation if needed
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Gender Dropdown
+                    DropdownButtonFormField<String>(
+                      value: _selectedGender,
+                      decoration: const InputDecoration(
+                        labelText: 'Jenis Kelamin',
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      items: ['Laki laki', 'Perempuan']
+                          .map(
+                            (gender) => DropdownMenuItem(
+                              value: gender,
+                              child: Text(gender),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedGender = value!;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Kota Field
+                    TextFormField(
+                      controller: _kotaController,
+                      decoration: const InputDecoration(
+                        labelText: 'Kota',
+                        hintText: 'Masukkan kota kamu',
+                        prefixIcon: Icon(Icons.location_city),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Kota tidak boleh kosong';
+                        }
+                        return null;
+                      },
+                    ),
                     const SizedBox(height: 24),
 
                     // Terms and Conditions Checkbox
@@ -235,30 +345,28 @@ class _RegisterPageState extends State<RegisterPage> {
                     // Register Button
                     ElevatedButton(
                       onPressed:
-                          _agreeToTerms
-                              ? () {
-                                if (_formKey.currentState!.validate()) {
-                                  // Implement registration logic
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Proses pendaftaran...'),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-                                }
-                              }
-                              : null,
+                          _agreeToTerms && !_isLoading ? _handleRegister : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            _agreeToTerms ? Colors.red : Colors.grey,
+                        backgroundColor: _agreeToTerms && !_isLoading
+                            ? Colors.red
+                            : Colors.grey,
                       ),
-                      child: const Text(
-                        'Daftar',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Daftar',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ],
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -10,75 +11,13 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final ApiService _apiService = ApiService();
 
-  // Dummy user data
-  final Map<String, dynamic> _userData = {
-    'name': 'Algie Swargani',
-    'username': 'algieswrgn',
-    'avatar': 'lib/assets/image/profile.jpeg',
-    'location': 'Bandung, Indonesia',
-    'bio':
-        'Pecinta olahraga basket dan futsal. Biasa bermain di akhir pekan bersama teman-teman komunitas.',
-    'followers': 245,
-    'following': 187,
-    'sports': ['Basket', 'Futsal', 'Lari'],
-    'level': 'Intermediate',
-  };
-
-  // Dummy activity data
-  final List<Map<String, dynamic>> _activities = [
-    {
-      'type': 'event',
-      'title': 'Basket Senayan',
-      'date': '12 April 2025',
-      'time': '16:00 - 18:00',
-      'location': 'GOR Senayan',
-      'image': 'https://images.unsplash.com/photo-1546519638-68e109498ffc',
-      'participants': 8,
-    },
-    {
-      'type': 'event',
-      'title': 'Futsal Weekenders',
-      'date': '5 April 2025',
-      'time': '19:00 - 21:00',
-      'location': 'Futsal Zone Kemang',
-      'image': 'https://images.unsplash.com/photo-1552667466-07770ae110d0',
-      'participants': 12,
-    },
-    {
-      'type': 'post',
-      'content':
-          'Baru gabung komunitas lari pagi di Senayan. Siapa yang mau join?',
-      'date': '2 April 2025',
-      'likes': 18,
-      'comments': 7,
-    },
-  ];
-
-  // Dummy achievements data
-  final List<Map<String, dynamic>> _achievements = [
-    {
-      'title': 'Regular Player',
-      'description': 'Joined 5 basketball games',
-      'icon': Icons.sports_basketball,
-      'date': '15 Maret 2025',
-      'color': Colors.orange,
-    },
-    {
-      'title': 'Community Builder',
-      'description': 'Created first sports community',
-      'icon': Icons.people,
-      'date': '28 Februari 2025',
-      'color': Colors.blue,
-    },
-    {
-      'title': 'Explorer',
-      'description': 'Played at 3 different venues',
-      'icon': Icons.place,
-      'date': '10 Februari 2025',
-      'color': Colors.green,
-    },
-  ];
+  Map<String, dynamic> _userData = {};
+  List<Map<String, dynamic>> _activities = [];
+  List<Map<String, dynamic>> _achievements = [];
+  bool _isLoading = true;
+  String _error = '';
 
   // Dummy settings sections
   final List<Map<String, dynamic>> _settingsSections = [
@@ -112,6 +51,43 @@ class _ProfilePageState extends State<ProfilePage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = '';
+      });
+
+      // Fetch user profile
+      final profileData = await _apiService
+          .getProfile('YOUR_TOKEN'); // Replace with actual token
+      setState(() {
+        _userData = profileData;
+      });
+
+      // Fetch user activities
+      final activitiesData = await _apiService
+          .fetchUserActivities('YOUR_TOKEN'); // Replace with actual token
+      setState(() {
+        _activities = List<Map<String, dynamic>>.from(activitiesData);
+      });
+
+      // Fetch user achievements
+      final achievementsData = await _apiService
+          .fetchUserAchievements('YOUR_TOKEN'); // Replace with actual token
+      setState(() {
+        _achievements = List<Map<String, dynamic>>.from(achievementsData);
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to load profile data: $e';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -172,8 +148,7 @@ class _ProfilePageState extends State<ProfilePage>
 
             // Tab Content
             SizedBox(
-              height:
-                  MediaQuery.of(context).size.height -
+              height: MediaQuery.of(context).size.height -
                   kToolbarHeight -
                   48, // Sesuaikan tinggi
               child: TabBarView(
@@ -197,6 +172,25 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildProfileHeader() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error.isNotEmpty) {
+      return Center(
+        child: Column(
+          children: [
+            Text(_error, style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _fetchUserData,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -207,7 +201,8 @@ class _ProfilePageState extends State<ProfilePage>
             children: [
               CircleAvatar(
                 radius: 50,
-                backgroundImage: NetworkImage(_userData['avatar']),
+                backgroundImage: NetworkImage(
+                    _userData['avatar'] ?? 'https://via.placeholder.com/150'),
               ),
               Container(
                 decoration: BoxDecoration(
@@ -234,11 +229,11 @@ class _ProfilePageState extends State<ProfilePage>
 
           // Name and Username
           Text(
-            _userData['name'],
+            _userData['name'] ?? 'User',
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           Text(
-            '@${_userData['username']}',
+            '@${_userData['username'] ?? 'username'}',
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
 
@@ -251,7 +246,7 @@ class _ProfilePageState extends State<ProfilePage>
               Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
               const SizedBox(width: 4),
               Text(
-                _userData['location'],
+                _userData['location'] ?? 'Location not set',
                 style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
             ],
@@ -261,7 +256,7 @@ class _ProfilePageState extends State<ProfilePage>
 
           // Bio
           Text(
-            _userData['bio'],
+            _userData['bio'] ?? 'No bio available',
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 14),
           ),
@@ -272,12 +267,18 @@ class _ProfilePageState extends State<ProfilePage>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildStatColumn(_userData['followers'].toString(), 'Pengikut'),
-              Container(height: 24, width: 1, color: Colors.grey[300]),
-              _buildStatColumn(_userData['following'].toString(), 'Mengikuti'),
+              _buildStatColumn(
+                (_userData['followers'] ?? 0).toString(),
+                'Pengikut',
+              ),
               Container(height: 24, width: 1, color: Colors.grey[300]),
               _buildStatColumn(
-                _userData['sports'].length.toString(),
+                (_userData['following'] ?? 0).toString(),
+                'Mengikuti',
+              ),
+              Container(height: 24, width: 1, color: Colors.grey[300]),
+              _buildStatColumn(
+                (_userData['sports']?.length ?? 0).toString(),
                 'Olahraga',
               ),
             ],
@@ -618,7 +619,6 @@ class _ProfilePageState extends State<ProfilePage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (sectionIndex > 0) const SizedBox(height: 16),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Text(
@@ -630,7 +630,6 @@ class _ProfilePageState extends State<ProfilePage>
                 ),
               ),
             ),
-
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
@@ -640,9 +639,8 @@ class _ProfilePageState extends State<ProfilePage>
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
                 itemCount: section['items'].length,
-                separatorBuilder:
-                    (context, index) =>
-                        Divider(height: 1, color: Colors.grey[200]),
+                separatorBuilder: (context, index) =>
+                    Divider(height: 1, color: Colors.grey[200]),
                 itemBuilder: (context, index) {
                   final item = section['items'][index];
                   bool isLastItemInSection =

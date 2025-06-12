@@ -78,39 +78,38 @@ class _DashboardPageState extends State<DashboardPage> {
                   Navigator.pushNamed(context, '/faq');
                 }
               },
-              itemBuilder:
-                  (context) => [
-                    const PopupMenuItem(
-                      value: 'profile',
-                      child: Row(
-                        children: [
-                          Icon(Icons.person, size: 18),
-                          SizedBox(width: 8),
-                          Text('Profile'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'faq',
-                      child: Row(
-                        children: [
-                          Icon(Icons.help_outline, size: 18),
-                          SizedBox(width: 8),
-                          Text('FAQ'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'logout',
-                      child: Row(
-                        children: [
-                          Icon(Icons.logout, size: 18),
-                          SizedBox(width: 8),
-                          Text('Logout'),
-                        ],
-                      ),
-                    ),
-                  ],
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'profile',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person, size: 18),
+                      SizedBox(width: 8),
+                      Text('Profile'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'faq',
+                  child: Row(
+                    children: [
+                      Icon(Icons.help_outline, size: 18),
+                      SizedBox(width: 8),
+                      Text('FAQ'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, size: 18),
+                      SizedBox(width: 8),
+                      Text('Logout'),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -119,7 +118,7 @@ class _DashboardPageState extends State<DashboardPage> {
         index: _selectedIndex,
         children: [
           // Feed Tab
-          const FeedsTab(),
+          PostsPage(),
 
           // Komunitas Tab
           const CommunitiesTab(),
