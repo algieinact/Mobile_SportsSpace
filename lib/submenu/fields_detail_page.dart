@@ -32,60 +32,98 @@ class FieldsDetailPage extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 image: DecorationImage(
-                  image: NetworkImage(field.image),
+                  image: NetworkImage(field.foto.isNotEmpty
+                      ? field.foto
+                      : 'https://via.placeholder.com/400x200'),
                   fit: BoxFit.cover,
                 ),
               ),
             ),
             const SizedBox(height: 16),
-
             Text(
-              field.name,
+              field.nama_lapangan,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
             ),
             const SizedBox(height: 8),
-
             Row(
               children: [
-                Icon(Icons.star, color: Colors.amber),
-                const SizedBox(width: 4),
-                Text('${field.rating} (${field.reviews} reviews)'),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    field.type.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
                 const SizedBox(width: 16),
-                Icon(Icons.location_on, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(field.distance),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    field.categori.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
-
             const Text(
               "Location",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(height: 8),
-            Text(field.location),
+            Text(field.address),
             const SizedBox(height: 16),
-
             const Text(
-              "Available Sports",
+              "Operating Hours",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            Text('${field.opening_hours} - ${field.closing_hours}'),
+            const SizedBox(height: 16),
+            const Text(
+              "Facilities",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
-              children:
-                  field.sports
-                      .map(
-                        (sport) => Chip(
-                          label: Text(sport),
-                          backgroundColor: Colors.red.withOpacity(0.1),
-                          labelStyle: const TextStyle(color: Colors.red),
-                        ),
-                      )
-                      .toList(),
+              children: field.fasility.split(',').map((facility) {
+                return Chip(
+                  label: Text(facility.trim()),
+                  backgroundColor: Colors.red.withOpacity(0.1),
+                  labelStyle: const TextStyle(color: Colors.red),
+                );
+              }).toList(),
             ),
+            const SizedBox(height: 16),
+            const Text(
+              "Description",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            Text(field.description),
             const SizedBox(height: 24),
-
             ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(
@@ -95,7 +133,8 @@ class FieldsDetailPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: Center(child: Text('Book Now - ${field.price}')),
+              child: Center(
+                  child: Text('Book Now - Rp ${field.price.toString()}')),
             ),
           ],
         ),

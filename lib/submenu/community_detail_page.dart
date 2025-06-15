@@ -9,11 +9,6 @@ class CommunityDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text(community.name),
-      //   backgroundColor: Colors.white,
-      //   elevation: 0,
-      // ),
       appBar: AppBar(
         title: Text(
           "Community Detail",
@@ -40,7 +35,9 @@ class CommunityDetailPage extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 image: DecorationImage(
-                  image: NetworkImage(community.image),
+                  image: NetworkImage(community.foto.isNotEmpty
+                      ? community.foto
+                      : 'https://via.placeholder.com/400x200'),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -49,7 +46,7 @@ class CommunityDetailPage extends StatelessWidget {
 
             // Community Name
             Text(
-              community.name,
+              community.nama,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
             ),
             const SizedBox(height: 8),
@@ -59,22 +56,22 @@ class CommunityDetailPage extends StatelessWidget {
               children: [
                 Icon(Icons.people, color: Colors.grey[600]),
                 const SizedBox(width: 4),
-                Text('${community.members} Anggota'),
+                Text('${community.max_members} Anggota'),
                 const SizedBox(width: 16),
-                Icon(Icons.calendar_today, color: Colors.grey[600]),
+                Icon(Icons.location_on, color: Colors.grey[600]),
                 const SizedBox(width: 4),
-                Text('Event: ${community.nextEvent}'),
+                Text('${community.kota}, ${community.provinsi}'),
               ],
             ),
             const SizedBox(height: 16),
 
-            // Description Placeholder
+            // Description
             Text(
               "Deskripsi",
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(height: 8),
-            Text(community.description, style: const TextStyle(fontSize: 16)),
+            Text(community.deskripsi, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 24),
 
             // Join Button

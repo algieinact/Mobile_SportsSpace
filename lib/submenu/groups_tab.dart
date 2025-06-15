@@ -23,9 +23,9 @@ class _GroupsTabState extends State<GroupsTab> {
   // Filters list
   final List<String> _filters = [
     'Semua',
-    'Basket',
     'Futsal',
     'Badminton',
+    'Basket',
     'Lari',
   ];
 
@@ -42,7 +42,7 @@ class _GroupsTabState extends State<GroupsTab> {
         _error = '';
       });
 
-      final groupsData = await _apiService.fetchGroups();
+      final groupsData = await _apiService.fetchSportsGroups();
       setState(() {
         _sportsGroups =
             groupsData.map((data) => SportsGroup.fromJson(data)).toList();
@@ -56,27 +56,14 @@ class _GroupsTabState extends State<GroupsTab> {
     }
   }
 
-  Future<void> _joinGroup(String groupId) async {
-    try {
-      // Implement join group functionality
-      await _apiService.joinGroup(groupId);
-      // Refresh groups after joining
-      _fetchGroups();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to join group: $e')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // Filter groups based on category and search
     final filteredGroups = _sportsGroups.where((group) {
-      final matchesCategory =
-          _selectedCategory == 'Semua' || group.sport == _selectedCategory;
+      final matchesCategory = _selectedCategory == 'Semua' ||
+          group.jenis_olahraga == _selectedCategory;
       final matchesSearch =
-          group.name.toLowerCase().contains(_searchQuery.toLowerCase());
+          group.title.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     }).toList();
 
@@ -192,140 +179,114 @@ class _GroupsTabState extends State<GroupsTab> {
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Row(
-        children: [
-          // Group Image
-          ClipRRect(
-            borderRadius: const BorderRadius.horizontal(
-              left: Radius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    group.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    group.jenis_olahraga,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            child: Image.network(
-              group.image,
-              width: 120,
-              height: 120,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 120,
-                  height: 120,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.error),
-                );
-              },
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.calendar_today, color: Colors.grey[600], size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  '${group.event_date} ${group.start_time} - ${group.end_time}',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
             ),
-          ),
-
-          // Group Info
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          group.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          group.sport,
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.location_on, color: Colors.grey[600], size: 16),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    '${group.city}, ${group.address}',
+                    style: TextStyle(color: Colors.grey[600]),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.people, color: Colors.grey[600], size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${group.members} Anggota',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.event, color: Colors.grey[600], size: 16),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          group.events,
-                          style: TextStyle(color: Colors.grey[600]),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Row with two buttons: Gabung and Details
-                  Row(
-                    children: [
-                      // Gabung Button
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => _joinGroup(group.id),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            minimumSize: const Size(double.infinity, 36),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text('Gabung'),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Details Button
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    GroupsDetailPage(group: group),
-                              ),
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text('Detail'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.people, color: Colors.grey[600], size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  '${group.current_members}/${group.kapasitas_maksimal} Anggota',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                const SizedBox(width: 16),
+                Icon(Icons.payment, color: Colors.grey[600], size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  'Rp ${group.payment_amount}',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => GroupsDetailPage(group: group),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      minimumSize: const Size(double.infinity, 36),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Detail'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

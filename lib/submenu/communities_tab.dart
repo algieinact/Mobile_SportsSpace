@@ -67,11 +67,11 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
 
   List<Community> get _filteredCommunities {
     return _communities.where((community) {
-      final matchesSearch = community.name.toLowerCase().contains(
+      final matchesSearch = community.nama.toLowerCase().contains(
             _searchQuery.toLowerCase(),
           );
-      final matchesCategory =
-          _selectedCategory == 'Semua' || community.sport == _selectedCategory;
+      final matchesCategory = _selectedCategory == 'Semua' ||
+          community.jns_olahraga == _selectedCategory;
       return matchesSearch && matchesCategory;
     }).toList();
   }
@@ -209,7 +209,9 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
                 top: Radius.circular(12),
               ),
               image: DecorationImage(
-                image: NetworkImage(community.image),
+                image: NetworkImage(community.foto.isNotEmpty
+                    ? community.foto
+                    : 'https://via.placeholder.com/400x200'),
                 fit: BoxFit.cover,
               ),
             ),
@@ -225,7 +227,7 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      community.name,
+                      community.nama,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
@@ -241,7 +243,7 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        community.sport,
+                        community.jns_olahraga,
                         style: const TextStyle(
                           color: Colors.red,
                           fontWeight: FontWeight.bold,
@@ -257,18 +259,18 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
                     Icon(Icons.people, color: Colors.grey[600], size: 16),
                     const SizedBox(width: 4),
                     Text(
-                      '${community.members} Anggota',
+                      '${community.max_members} Anggota',
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                     const SizedBox(width: 16),
                     Icon(
-                      Icons.calendar_today,
+                      Icons.location_on,
                       color: Colors.grey[600],
                       size: 16,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Event: ${community.nextEvent}',
+                      '${community.kota}, ${community.provinsi}',
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                   ],
@@ -298,7 +300,8 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => _joinCommunity(community.id),
+                        onPressed: () =>
+                            _joinCommunity(community.id_kmnts.toString()),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           shape: RoundedRectangleBorder(

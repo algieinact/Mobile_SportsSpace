@@ -66,7 +66,7 @@ class _PostsPageState extends State<PostsPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToCreatePost(),
         child: Icon(Icons.add),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.red,
       ),
     );
   }

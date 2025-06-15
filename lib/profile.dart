@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'api_service.dart';
+import 'auth_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -61,25 +62,23 @@ class _ProfilePageState extends State<ProfilePage>
         _error = '';
       });
 
+      // Get token from AuthService
+      final token = await AuthService.getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
       // Fetch user profile
-      final profileData = await _apiService
-          .getProfile('YOUR_TOKEN'); // Replace with actual token
+      final profileData = await _apiService.getProfile(token);
       setState(() {
         _userData = profileData;
       });
 
-      // Fetch user activities
-      final activitiesData = await _apiService
-          .fetchUserActivities('YOUR_TOKEN'); // Replace with actual token
+      // For now, we'll use empty lists for activities and achievements
+      // since these endpoints might not be implemented yet
       setState(() {
-        _activities = List<Map<String, dynamic>>.from(activitiesData);
-      });
-
-      // Fetch user achievements
-      final achievementsData = await _apiService
-          .fetchUserAchievements('YOUR_TOKEN'); // Replace with actual token
-      setState(() {
-        _achievements = List<Map<String, dynamic>>.from(achievementsData);
+        _activities = [];
+        _achievements = [];
         _isLoading = false;
       });
     } catch (e) {
@@ -122,7 +121,6 @@ class _ProfilePageState extends State<ProfilePage>
         ],
       ),
       body: SingleChildScrollView(
-        // Tambahkan SingleChildScrollView
         child: Column(
           children: [
             // Profile Header Section
@@ -148,9 +146,7 @@ class _ProfilePageState extends State<ProfilePage>
 
             // Tab Content
             SizedBox(
-              height: MediaQuery.of(context).size.height -
-                  kToolbarHeight -
-                  48, // Sesuaikan tinggi
+              height: MediaQuery.of(context).size.height - kToolbarHeight - 48,
               child: TabBarView(
                 controller: _tabController,
                 children: [
@@ -201,8 +197,28 @@ class _ProfilePageState extends State<ProfilePage>
             children: [
               CircleAvatar(
                 radius: 50,
-                backgroundImage: NetworkImage(
-                    _userData['avatar'] ?? 'https://via.placeholder.com/150'),
+                backgroundColor: Colors.grey[200],
+                child: _userData['photo'] != null
+                    ? ClipOval(
+                        child: Image.network(
+                          _userData['photo'],
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.person,
+                              size: 50,
+                              color: Colors.grey,
+                            );
+                          },
+                        ),
+                      )
+                    : const Icon(
+                        Icons.person,
+                        size: 50,
+                        color: Colors.grey,
+                      ),
               ),
               Container(
                 decoration: BoxDecoration(
@@ -229,7 +245,7 @@ class _ProfilePageState extends State<ProfilePage>
 
           // Name and Username
           Text(
-            _userData['name'] ?? 'User',
+            _userData['name'] ?? _userData['username'] ?? 'User',
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           Text(
@@ -246,7 +262,7 @@ class _ProfilePageState extends State<ProfilePage>
               Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
               const SizedBox(width: 4),
               Text(
-                _userData['location'] ?? 'Location not set',
+                _userData['kota'] ?? 'Location not set',
                 style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
             ],
@@ -254,11 +270,29 @@ class _ProfilePageState extends State<ProfilePage>
 
           const SizedBox(height: 16),
 
-          // Bio
-          Text(
-            _userData['bio'] ?? 'No bio available',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 14),
+          // User Info
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+              const SizedBox(width: 4),
+              Text(
+                'Tanggal Lahir: ${_userData['tanggal_lahir'] ?? 'Not set'}',
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.person, size: 16, color: Colors.grey[600]),
+              const SizedBox(width: 4),
+              Text(
+                'Gender: ${_userData['gender'] ?? 'Not set'}',
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+            ],
           ),
 
           const SizedBox(height: 16),
@@ -303,170 +337,23 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildActivitiesTab() {
+    if (_activities.isEmpty) {
+      return const Center(
+        child: Text('Belum ada aktivitas'),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _activities.length,
       itemBuilder: (context, index) {
         final activity = _activities[index];
-
-        if (activity['type'] == 'event') {
-          return _buildEventCard(activity);
-        } else {
-          return _buildPostCard(activity);
-        }
+        return _buildActivityCard(activity);
       },
     );
   }
 
-  Widget _buildEventCard(Map<String, dynamic> event) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Event Image
-          Container(
-            height: 120,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
-              image: DecorationImage(
-                image: NetworkImage(event['image']),
-                fit: BoxFit.cover,
-              ),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
-                ),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
-                ),
-              ),
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    event['title'],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Date and Time
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      event['date'],
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                    const SizedBox(width: 16),
-                    Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      event['time'],
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 8),
-
-                // Location
-                Row(
-                  children: [
-                    Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      event['location'],
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 8),
-
-                // Participants
-                Row(
-                  children: [
-                    Icon(Icons.people, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${event['participants']} Peserta',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Action Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          // View Event Details
-                        },
-                        style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text('Lihat Detail'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Share Event
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text('Bagikan'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPostCard(Map<String, dynamic> post) {
+  Widget _buildActivityCard(Map<String, dynamic> activity) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -476,71 +363,31 @@ class _ProfilePageState extends State<ProfilePage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Post Header
             Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundImage: NetworkImage(_userData['avatar']),
+                Icon(
+                  _getActivityIcon(activity['type']),
+                  color: Colors.red,
                 ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _userData['name'],
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(
-                      post['date'],
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                  ],
+                const SizedBox(width: 8),
+                Text(
+                  activity['title'] ?? 'Activity',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ],
             ),
-
-            const SizedBox(height: 16),
-
-            // Post Content
-            Text(post['content']),
-
-            const SizedBox(height: 16),
-
-            // Post Actions
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.favorite_border,
-                      color: Colors.grey[700],
-                      size: 20,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      post['likes'].toString(),
-                      style: TextStyle(color: Colors.grey[700]),
-                    ),
-                    const SizedBox(width: 16),
-                    Icon(
-                      Icons.chat_bubble_outline,
-                      color: Colors.grey[700],
-                      size: 20,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      post['comments'].toString(),
-                      style: TextStyle(color: Colors.grey[700]),
-                    ),
-                  ],
-                ),
-                Icon(Icons.share, color: Colors.grey[700], size: 20),
-              ],
+            const SizedBox(height: 8),
+            Text(
+              activity['description'] ?? 'No description available',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Date: ${activity['date'] ?? 'Not specified'}',
+              style: TextStyle(color: Colors.grey[500], fontSize: 12),
             ),
           ],
         ),
@@ -548,64 +395,84 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
+  IconData _getActivityIcon(String? type) {
+    switch (type?.toLowerCase()) {
+      case 'event':
+        return Icons.event;
+      case 'post':
+        return Icons.post_add;
+      case 'achievement':
+        return Icons.emoji_events;
+      default:
+        return Icons.star;
+    }
+  }
+
   Widget _buildAchievementsTab() {
+    if (_achievements.isEmpty) {
+      return const Center(
+        child: Text('Belum ada prestasi'),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _achievements.length,
       itemBuilder: (context, index) {
         final achievement = _achievements[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 16),
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: achievement['color'].withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    achievement['icon'],
-                    color: achievement['color'],
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        achievement['title'],
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        achievement['description'],
-                        style: TextStyle(color: Colors.grey[700], fontSize: 14),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Diperoleh pada ${achievement['date']}',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Icons.emoji_events, color: Colors.amber[700]),
-              ],
-            ),
-          ),
-        );
+        return _buildAchievementCard(achievement);
       },
+    );
+  }
+
+  Widget _buildAchievementCard(Map<String, dynamic> achievement) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.emoji_events,
+                color: Colors.amber,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    achievement['title'] ?? 'Achievement',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    achievement['description'] ?? 'No description available',
+                    style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Earned on ${achievement['date'] ?? 'Unknown date'}',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -643,10 +510,7 @@ class _ProfilePageState extends State<ProfilePage>
                     Divider(height: 1, color: Colors.grey[200]),
                 itemBuilder: (context, index) {
                   final item = section['items'][index];
-                  bool isLastItemInSection =
-                      index == section['items'].length - 1;
-
-                  Widget listTile = ListTile(
+                  return ListTile(
                     leading: Icon(item['icon'], color: Colors.red),
                     title: Text(item['title']),
                     trailing: const Icon(Icons.chevron_right),
@@ -657,32 +521,6 @@ class _ProfilePageState extends State<ProfilePage>
                       }
                     },
                   );
-
-                  // Add rounded corners to the first and last items
-                  if (index == 0 && isLastItemInSection) {
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: listTile,
-                    );
-                  } else if (index == 0) {
-                    return ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                      child: listTile,
-                    );
-                  } else if (isLastItemInSection) {
-                    return ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(12),
-                        bottomRight: Radius.circular(12),
-                      ),
-                      child: listTile,
-                    );
-                  } else {
-                    return listTile;
-                  }
                 },
               ),
             ),
@@ -726,9 +564,27 @@ class _ProfilePageState extends State<ProfilePage>
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Keluar'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                // Implement logout
+                final token = await AuthService.getToken();
+                if (token != null) {
+                  try {
+                    await _apiService.logout(token);
+                    await AuthService.removeToken();
+                    if (mounted) {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to logout: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                }
               },
             ),
             ListTile(

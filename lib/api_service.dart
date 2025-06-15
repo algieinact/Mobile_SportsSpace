@@ -131,19 +131,36 @@ class ApiService {
 
   // ------------------ COMMUNITIES ------------------
   Future<List<dynamic>> fetchCommunities() async {
-    final url = Uri.parse('$baseUrl/communities');
-    final response = await http.get(url);
+    try {
+      final url = Uri.parse('$baseUrl/komunitas');
+      print('Fetching communities from: $url');
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Failed to fetch communities');
+      final headers = await getHeaders();
+      print('Using headers: $headers');
+
+      final response = await http.get(url, headers: headers);
+      print('Response status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'success' && data['data'] != null) {
+          return data['data'];
+        } else {
+          throw Exception(data['message'] ?? 'Failed to fetch communities');
+        }
+      } else {
+        throw Exception('Failed to fetch communities: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching communities: $e');
+      throw Exception('Failed to fetch communities: $e');
     }
   }
 
   // Fungsi untuk mendapatkan detail komunitas tertentu
   Future<Map<String, dynamic>> fetchCommunityDetails(String communityId) async {
-    final url = Uri.parse('$baseUrl/communities/$communityId');
+    final url = Uri.parse('$baseUrl/komunitas/$communityId');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -157,7 +174,7 @@ class ApiService {
   Future<Map<String, dynamic>> createCommunity(
     Map<String, dynamic> communityData,
   ) async {
-    final url = Uri.parse('$baseUrl/communities');
+    final url = Uri.parse('$baseUrl/komunitas');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -176,7 +193,7 @@ class ApiService {
     String communityId,
     Map<String, dynamic> communityData,
   ) async {
-    final url = Uri.parse('$baseUrl/communities/$communityId');
+    final url = Uri.parse('$baseUrl/komunitas/$communityId');
     final response = await http.put(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -192,7 +209,7 @@ class ApiService {
 
   // Fungsi untuk menghapus komunitas
   Future<void> deleteCommunity(String communityId) async {
-    final url = Uri.parse('$baseUrl/communities/$communityId');
+    final url = Uri.parse('$baseUrl/komunitas/$communityId');
     final response = await http.delete(url);
 
     if (response.statusCode != 204) {
@@ -502,6 +519,56 @@ class ApiService {
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to join community: ${response.body}');
+    }
+  }
+
+  // ------------------ FIELDS ------------------
+  Future<List<dynamic>> fetchFields() async {
+    try {
+      final url = Uri.parse('$baseUrl/lapangans');
+      print('Fetching fields from: $url');
+
+      final headers = await getHeaders();
+      print('Using headers: $headers');
+
+      final response = await http.get(url, headers: headers);
+      print('Response status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data;
+      } else {
+        throw Exception('Failed to fetch fields: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching fields: $e');
+      throw Exception('Failed to fetch fields: $e');
+    }
+  }
+
+  // ------------------ SPORTS GROUPS ------------------
+  Future<List<dynamic>> fetchSportsGroups() async {
+    try {
+      final url = Uri.parse('$baseUrl/sports-groups');
+      print('Fetching sports groups from: $url');
+
+      final headers = await getHeaders();
+      print('Using headers: $headers');
+
+      final response = await http.get(url, headers: headers);
+      print('Response status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data;
+      } else {
+        throw Exception('Failed to fetch sports groups: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching sports groups: $e');
+      throw Exception('Failed to fetch sports groups: $e');
     }
   }
 }

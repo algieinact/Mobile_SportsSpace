@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'models.dart';
 import 'fields_detail_page.dart';
+import '../api_service.dart';
 
 class FieldsTab extends StatefulWidget {
   const FieldsTab({super.key});
@@ -10,54 +11,10 @@ class FieldsTab extends StatefulWidget {
 }
 
 class _FieldsTabState extends State<FieldsTab> {
-  // Dummy data for fields
-  final List<Field> _fields = [
-    Field(
-      id: '1',
-      name: 'GOR Senayan',
-      image: 'https://images.unsplash.com/photo-1504450758481-7338eba7524a',
-      rating: 4.7,
-      reviews: 128,
-      location: 'Senayan, Jakarta Selatan',
-      distance: '2.5 km',
-      sports: ['Basket', 'Voli', 'Badminton'],
-      price: 'Rp 150,000/jam',
-    ),
-    Field(
-      id: '2',
-      name: 'Futsal Zone Kemang',
-      image:
-          'https://images.unsplash.com/photo-1712325485668-6b6830ba814e?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-      rating: 4.5,
-      reviews: 89,
-      location: 'Kemang, Jakarta Selatan',
-      distance: '3.8 km',
-      sports: ['Futsal'],
-      price: 'Rp 200,000/jam',
-    ),
-    Field(
-      id: '3',
-      name: 'Velodrome',
-      image: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f',
-      rating: 4.8,
-      reviews: 215,
-      location: 'Rawamangun, Jakarta Timur',
-      distance: '7.2 km',
-      sports: ['Voli', 'Badminton', 'Basket'],
-      price: 'Rp 120,000/jam',
-    ),
-    Field(
-      id: '4',
-      name: 'Soccer Field Kuningan',
-      image: 'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9',
-      rating: 4.4,
-      reviews: 76,
-      location: 'Kuningan, Jakarta Selatan',
-      distance: '4.5 km',
-      sports: ['Sepak Bola'],
-      price: 'Rp 350,000/jam',
-    ),
-  ];
+  final ApiService _apiService = ApiService();
+  List<Field> _fields = [];
+  bool _isLoading = true;
+  String _error = '';
 
   String _searchQuery = '';
   String _selectedCategory = 'Semua';
@@ -65,21 +22,46 @@ class _FieldsTabState extends State<FieldsTab> {
   // Add filters list
   final List<String> _filters = [
     'Semua',
-    'Basket',
     'Futsal',
+    'Basket',
     'Badminton',
     'Sepak Bola',
     'Voli',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _fetchFields();
+  }
+
+  Future<void> _fetchFields() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = '';
+      });
+
+      final fieldsData = await _apiService.fetchFields();
+      setState(() {
+        _fields = fieldsData.map((data) => Field.fromJson(data)).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to load fields: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
   List<Field> get _filteredFields {
     return _fields.where((field) {
-      final matchesSearch = field.name.toLowerCase().contains(
-        _searchQuery.toLowerCase(),
-      );
-      final matchesCategory =
-          _selectedCategory == 'Semua' ||
-          field.sports.contains(_selectedCategory);
+      final matchesSearch = field.nama_lapangan.toLowerCase().contains(
+            _searchQuery.toLowerCase(),
+          );
+      final matchesCategory = _selectedCategory == 'Semua' ||
+          field.type == _selectedCategory.toLowerCase();
       return matchesSearch && matchesCategory;
     }).toList();
   }
@@ -117,77 +99,78 @@ class _FieldsTabState extends State<FieldsTab> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children:
-                  _filters.map((filter) {
-                    final isSelected = _selectedCategory == filter;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: FilterChip(
-                        label: Text(filter),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            _selectedCategory = filter;
-                          });
-                        },
-                        backgroundColor: Colors.grey.shade200,
-                        selectedColor: Colors.red.shade100,
-                        checkmarkColor: Colors.red,
-                        labelStyle: TextStyle(
-                          color:
-                              isSelected ? Colors.red.shade700 : Colors.black87,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(
-                            color:
-                                isSelected
-                                    ? Colors.red.shade300
-                                    : Colors.transparent,
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
+              children: _filters.map((filter) {
+                final isSelected = _selectedCategory == filter;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: FilterChip(
+                    label: Text(filter),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedCategory = filter;
+                      });
+                    },
+                    backgroundColor: Colors.grey.shade200,
+                    selectedColor: Colors.red.shade100,
+                    checkmarkColor: Colors.red,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.red.shade700 : Colors.black87,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: isSelected
+                            ? Colors.red.shade300
+                            : Colors.transparent,
                       ),
-                    );
-                  }).toList(),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           ),
 
           const SizedBox(height: 24),
 
-          // Fields Nearby
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Venue Terdekat',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          // Loading and Error States
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (_error.isNotEmpty)
+            Center(
+              child: Column(
+                children: [
+                  Text(_error, style: const TextStyle(color: Colors.red)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _fetchFields,
+                    child: const Text('Retry'),
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: () {
-                  // See all venues
-                },
-                child: const Text('Lihat Semua'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Fields List
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _filteredFields.length,
-            itemBuilder: (context, index) {
-              final field = _filteredFields[index];
-              return _buildFieldCard(field);
-            },
-          ),
+            )
+          else if (_filteredFields.isEmpty)
+            const Center(
+              child: Text('No fields found'),
+            )
+          else ...[
+            // Fields List
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _filteredFields.length,
+              itemBuilder: (context, index) {
+                final field = _filteredFields[index];
+                return _buildFieldCard(field);
+              },
+            ),
+          ],
         ],
       ),
     );
@@ -209,7 +192,9 @@ class _FieldsTabState extends State<FieldsTab> {
                 top: Radius.circular(12),
               ),
               image: DecorationImage(
-                image: NetworkImage(field.image),
+                image: NetworkImage(field.foto.isNotEmpty
+                    ? field.foto
+                    : 'https://via.placeholder.com/400x200'),
                 fit: BoxFit.cover,
               ),
             ),
@@ -226,7 +211,7 @@ class _FieldsTabState extends State<FieldsTab> {
                   children: [
                     Expanded(
                       child: Text(
-                        field.name,
+                        field.nama_lapangan,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
@@ -234,22 +219,23 @@ class _FieldsTabState extends State<FieldsTab> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 18),
-                        const SizedBox(width: 4),
-                        Text(
-                          field.rating.toString(),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        field.type.toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
-                        Text(
-                          ' (${field.reviews})',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -260,31 +246,21 @@ class _FieldsTabState extends State<FieldsTab> {
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        field.location,
+                        field.address,
                         style: TextStyle(color: Colors.grey[600]),
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(Icons.directions, color: Colors.grey[600], size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      field.distance,
-                      style: TextStyle(color: Colors.grey[600]),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.sports, color: Colors.grey[600], size: 16),
+                    Icon(Icons.access_time, color: Colors.grey[600], size: 16),
                     const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        field.sports.join(', '),
-                        style: TextStyle(color: Colors.grey[600]),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    Text(
+                      '${field.opening_hours} - ${field.closing_hours}',
+                      style: TextStyle(color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -294,7 +270,7 @@ class _FieldsTabState extends State<FieldsTab> {
                     Icon(Icons.payments, color: Colors.grey[600], size: 16),
                     const SizedBox(width: 4),
                     Text(
-                      field.price,
+                      'Rp ${field.price.toString()}',
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                   ],
@@ -308,8 +284,8 @@ class _FieldsTabState extends State<FieldsTab> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder:
-                                  (context) => FieldsDetailPage(field: field),
+                              builder: (context) =>
+                                  FieldsDetailPage(field: field),
                             ),
                           );
                         },

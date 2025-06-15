@@ -43,7 +43,7 @@ class _CreateEditPostPageState extends State<CreateEditPostPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? 'Edit Post' : 'Create Post'),
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color.fromRGBO(244, 67, 54, 1),
         foregroundColor: Colors.white,
         actions: [
           TextButton(
@@ -104,6 +104,7 @@ class _CreateEditPostPageState extends State<CreateEditPostPage> {
               ElevatedButton(
                 onPressed: _submitPost,
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromRGBO(244, 67, 54, 1),
                   padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
