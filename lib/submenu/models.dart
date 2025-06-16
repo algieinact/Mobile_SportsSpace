@@ -13,9 +13,9 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      userId: json['user_id'],
-      username: json['username'],
-      photo: json['photo'],
+      userId: json['user_id'] as int,
+      username: json['username'] as String,
+      photo: json['photo'] as String,
     );
   }
 
@@ -89,10 +89,10 @@ class Community {
   final String foto;
   final String sampul;
   final int user_id;
-  final String status;
+  final int status;
   final DateTime? created_at;
   final DateTime? updated_at;
-  final Map<String, dynamic> user;
+  final User user;
 
   Community({
     required this.id_kmnts,
@@ -112,24 +112,24 @@ class Community {
   });
 
   factory Community.fromJson(Map<String, dynamic> json) => Community(
-        id_kmnts: json['id_kmnts'],
-        nama: json['nama'],
-        jns_olahraga: json['jns_olahraga'],
-        max_members: json['max_members'],
-        provinsi: json['provinsi'],
-        kota: json['kota'],
-        deskripsi: json['deskripsi'],
-        foto: json['foto'] ?? '',
-        sampul: json['sampul'] ?? '',
-        user_id: json['user_id'],
-        status: json['status'],
+        id_kmnts: json['id_kmnts'] as int,
+        nama: json['nama'] as String,
+        jns_olahraga: json['jns_olahraga'] as String,
+        max_members: json['max_members'] as int,
+        provinsi: json['provinsi'] as String,
+        kota: json['kota'] as String,
+        deskripsi: json['deskripsi'] as String,
+        foto: json['foto'] as String? ?? '',
+        sampul: json['sampul'] as String? ?? '',
+        user_id: json['user_id'] as int,
+        status: json['status'] as int,
         created_at: json['created_at'] != null
-            ? DateTime.parse(json['created_at'])
+            ? DateTime.parse(json['created_at'] as String)
             : null,
         updated_at: json['updated_at'] != null
-            ? DateTime.parse(json['updated_at'])
+            ? DateTime.parse(json['updated_at'] as String)
             : null,
-        user: json['user'],
+        user: User.fromJson(json['user'] as Map<String, dynamic>),
       );
 
   Map<String, dynamic> toJson() => {
@@ -146,7 +146,7 @@ class Community {
         'status': status,
         'created_at': created_at?.toIso8601String(),
         'updated_at': updated_at?.toIso8601String(),
-        'user': user,
+        'user': user.toJson(),
       };
 }
 

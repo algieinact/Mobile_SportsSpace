@@ -41,8 +41,10 @@ class _CommunitiesTabState extends State<CommunitiesTab> {
 
       final communitiesData = await _apiService.fetchCommunities();
       setState(() {
-        _communities =
-            communitiesData.map((data) => Community.fromJson(data)).toList();
+        _communities = communitiesData.map((data) {
+          print('Type of data in communitiesData: ${data.runtimeType}');
+          return Community.fromJson(data);
+        }).toList();
         _isLoading = false;
       });
     } catch (e) {

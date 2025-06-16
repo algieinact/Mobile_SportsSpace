@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'submenu/models.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  static const String baseUrl = 'http://10.30.112.65:8000/api';
 
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -144,11 +144,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['status'] == 'success' && data['data'] != null) {
-          return data['data'];
-        } else {
-          throw Exception(data['message'] ?? 'Failed to fetch communities');
-        }
+        return data;
       } else {
         throw Exception('Failed to fetch communities: ${response.body}');
       }
